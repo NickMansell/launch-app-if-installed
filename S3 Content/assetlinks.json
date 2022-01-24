@@ -1,0 +1,9 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "net.nickmansell.android.debug",
+    "sha256_cert_fingerprints":
+    ["27:D3:FE:74:B8:7F:6C:94:F2:69:00:09:0F:47:22:19:17:EA:F5:9A:B8:08:1F:4C:CA:0D:58:78:01:E9:EC:47"]
+  }
+}]

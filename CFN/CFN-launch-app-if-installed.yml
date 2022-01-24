@@ -1,0 +1,128 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'CloudFormation Template for spinning up CloudFront, CloudFront Function, S3 based solution for Launch-App-If-Installed feature.'
+Parameters:
+  EnvironmentName:
+    Type: String
+    Description: Used for differentiating resource names
+  RedirectToDomain:
+    Type: String
+    Description: Used for setting the sub-domain which will be dropped
+    Default: app.
+Resources:
+  S3WellKnownBucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref S3WellKnownBucket
+      PolicyDocument:
+        Version: 2008-10-17
+        Id: PolicyForCloudFrontPrivateContent
+        Statement:
+          - Sid: '1'
+            Effect: Allow
+            Principal:
+              AWS: !Join
+                - ' '
+                - - >-
+                    arn:aws:iam::cloudfront:user/CloudFront Origin Access
+                    Identity
+                  - !Ref CFOriginIdentity
+            Action: 's3:GetObject'
+            Resource: !Join
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref S3WellKnownBucket
+                - /*
+  S3WellKnownBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      AccessControl: Private
+      BucketName: !Join
+        - '-'
+        - - 'launch-app-if-installed-well-known-bucket'
+          - !Ref EnvironmentName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+  CFOriginIdentity:
+    Type: 'AWS::CloudFront::CloudFrontOriginAccessIdentity'
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Join
+          - '-'
+          - - 'origin identity for launch-app-if-installed feature'
+            - !Ref EnvironmentName
+  CFDistribution:
+    Type: 'AWS::CloudFront::Distribution'
+    Properties:
+      DistributionConfig:
+        Comment: CloudFront to launch-app-if-installed feature.  .well-known
+        CacheBehaviors:
+          - CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+            AllowedMethods:
+              - HEAD
+              - GET
+            CachedMethods:
+              - HEAD
+              - GET
+            Compress: true
+            PathPattern: /.well-known/*
+            SmoothStreaming: false
+            TargetOriginId: !Join
+              - '.'
+              - - well.known.S3.bucket
+                - !Ref EnvironmentName
+            ViewerProtocolPolicy: allow-all
+        DefaultCacheBehavior:
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          AllowedMethods:
+            - HEAD
+            - GET
+          CachedMethods:
+            - HEAD
+            - GET
+          Compress: true
+          SmoothStreaming: false
+          TargetOriginId: !Join
+            - '.'
+            - - well.known.S3.bucket
+              - !Ref EnvironmentName
+          ViewerProtocolPolicy: allow-all
+          FunctionAssociations:
+            - EventType: viewer-request
+              FunctionARN: !GetAtt CFFunctionRedirectToWebDomain.FunctionMetadata.FunctionARN
+        Enabled: true
+        IPV6Enabled: true
+        Origins:
+          - DomainName: !GetAtt
+              - S3WellKnownBucket
+              - DomainName
+            ConnectionAttempts: 3
+            ConnectionTimeout: 10
+            Id: !Join
+              - '.'
+              - - well.known.S3.bucket
+                - !Ref EnvironmentName
+            S3OriginConfig:
+              OriginAccessIdentity: !Join
+                - ''
+                - - origin-access-identity/cloudfront/
+                  - !Ref CFOriginIdentity
+        PriceClass: PriceClass_All
+  CFFunctionRedirectToWebDomain:
+    Type: 'AWS::CloudFront::Function'
+    Properties:
+      AutoPublish: true
+      Name: !Join
+        - '-'
+        - - RedirectToWebDomain
+          - !Ref EnvironmentName
+      FunctionCode: !Join
+        - ''
+        - - 'function handler(event) { var request = event.request; var redirectDomain = "'
+          - !Ref RedirectToDomain
+          - '"; var newurl = "https://" + redirectDomain + request.uri; return { statusCode: 302, statusDescription: "Found", headers: { "location": { "value": newurl } } }; }'
+      FunctionConfig:
+        Comment: ''
+        Runtime: cloudfront-js-1.0

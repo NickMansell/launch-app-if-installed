@@ -1,0 +1,13 @@
+{
+    "applinks": {
+        "apps": [],
+        "details": [{
+            "appID": "JU6LV2JYRR.net.nickmansell.UniversalLinkPlayground",
+            "paths": ["/home/*","/home"]
+            },
+	    {
+            "appID": "net.nickmansell.UniversalLinkPlayground",
+            "paths": ["/home/*","/home"]
+            }]
+    }
+}
