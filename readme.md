@@ -14,7 +14,7 @@ There are two ways to launch into a mobile app for both iOS and Android:
 Deep links rely on a custom scheme to launch a mobile app from another app or website
 IE: mobileapp://link/to/feature
 
-### Problems:
+**Problems**:
 * When you navigate to a custom scheme in a web browser, the browser will fail if app not installed.  
 * No way to consistently detect if app is installed
 * All browsers/OS have slight different tweaks around the above mechanisms
@@ -30,10 +30,10 @@ At the OS level (not browser), before a request is made in the browser, the OS d
 
 NOTE: iOS requires paths to be declared on the host side, Android has this declared in the app itself.
 
-### Problems:
+**Problems**:
 iOS can only launch universal links **_the first time a customer navigates to a given domain/subdomain_**.  This means that if the customer is already on www.mydomain.com, clicking on a link to www.mydomain.com/launch-my-app will not execute for iOS.  Android does allow for this mid-domain intercept.
 
-## Solution
+# Proposed Solutions
 Option 1:
 The best way to solve for this is to launch the app intercepts for www.maydomain.com directly, before customer lands on web site experience.  However, not all functionality may be on the app and some functionality that needs to be on web page.
 
@@ -53,7 +53,7 @@ Advantages:
 
 We opted for option 3 - creating the app.mydomain.com subdomain and bouncing web users off of that.
 
-# Requirements
+# Design Requirements
 * Must allow for regular access to */.well-known/* in order to allow for Apple and Android devices to query domain if universal links are allowed.
 
 This means that the traffic requests outside of /.well-known/ are either users who opted not to launch the app or do not have the app currently installed.
